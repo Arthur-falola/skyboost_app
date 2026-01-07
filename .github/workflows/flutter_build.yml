@@ -1,6 +1,5 @@
-name: Flutter Build APK
+name: Flutter Cloud Build APK
 
-# Déclenchement : à chaque push sur main ou manuel
 on:
   push:
     branches: [ "main" ]
@@ -11,34 +10,46 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Récupérer le code source
-      - name: Checkout source
+      # 1️⃣ Récupérer le code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2️⃣ Installer Java (nécessaire pour Android)
+      # 2️⃣ Installer Java pour Android
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # 3️⃣ Installer Flutter (version stable précise)
+      # 3️⃣ Installer Flutter stable
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.13.5'  # Version Flutter stable exacte
+          flutter-version: '3.13.5' # ou autre version stable précise
 
-      # 4️⃣ Installer les dépendances Flutter
-      - name: Install dependencies
-        run: flutter pub get
+      # 4️⃣ Créer un projet Flutter temporaire complet
+      - name: Create temporary Flutter app
+        run: |
+          flutter create -t app temp_app
+          cp -r lib temp_app/
+          cp -r assets temp_app/
+          cp pubspec.yaml temp_app/
 
-      # 5️⃣ Build APK en mode release
+      # 5️⃣ Installer les dépendances
+      - name: Get dependencies
+        run: |
+          cd temp_app
+          flutter pub get
+
+      # 6️⃣ Build APK release
       - name: Build APK
-        run: flutter build apk --release
+        run: |
+          cd temp_app
+          flutter build apk --release
 
-      # 6️⃣ Télécharger l’APK en artifact
+      # 7️⃣ Upload APK comme artifact
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: skyboost-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: temp_app/build/app/outputs/flutter-apk/app-release.apk
